@@ -27,7 +27,7 @@ class UnitTrustInfo():
         self._dividend_type = dividend_type
         self._dividend_period = dividend_period
         self._ticker = ticker
-        self._launch_date = launch_date    
+        self._launch_date = launch_date
         self._credit_rating = credit_rating
         self._total_net_asset = total_net_asset
         self._desc = desc
@@ -90,16 +90,21 @@ class UnitTrustInfo():
     
     @dividend_type.setter
     def dividend_type(self, value: str):
+
+        # print(value.upper(), value.upper() in ["CASH","UNIT","ACC"])
+        
         """Set the dividend type"""
-        if (value is not None) or (value.upper() not in ["CASH","UNIT"]):
-            raise ValueError("Invalid divident type. Dividend type can only be Cash, Unit or None.")
+        if (value is not None) and (value.upper() not in ["CASH","UNIT","ACC"]):
+            raise ValueError("Invalid divident type. Dividend type can only be Cash, Unit or Acc.")
         
         if value is None:
             self._dividend_type = None
         elif value.upper() == "CASH":
             self._dividend_type = "Cash"
-        else:
+        elif value.upper() == "UNIT":
             self._dividend_type = "Unit"
+        else:
+            self._dividend_type = "Acc"
 
     @property
     def dividend_period(self):
@@ -109,7 +114,7 @@ class UnitTrustInfo():
     @dividend_period.setter
     def dividend_period(self, value: str):
         """Set the dividend period"""
-        if (value is not None) or (value.upper() not in ("YEARLY","QUATERLY","MONTHLY")):
+        if (value is not None) and (value.upper() not in ("YEARLY","QUATERLY","MONTHLY")):
             raise ValueError("Invalid divident period. Dividend period can only be Yearly, Quarterly, Monthly or None.")
         
         if value is None:
@@ -183,7 +188,7 @@ class UnitTrustInfo():
     @ret.setter
     def ret(self, value: str):
         """Set the return"""
-        if value not in ("*", "**","***", "****", "*****"):
+        if (value is not None) and (value not in ("*", "**","***", "****", "*****")):
             raise ValueError("Invalid return rating. Return rating is from * (low) to ***** (high).")
         self._ret = value
 
@@ -195,14 +200,15 @@ class UnitTrustInfo():
     @risk.setter
     def risk(self, value: str):
         """Set the risk"""
-        if value not in ("*", "**","***", "****", "*****"):
+        if (value is not None) and (value not in ("*", "**","***", "****", "*****")):
             raise ValueError("Invalid risk rating. Risk rating is from * (low) to ***** (high).")
         self._risk = value
 
 class UnitTrustInfoList():
     def __init__(self, filename):
         self._filename = filename
-        self._df_unitTrustInfo = pd.read_csv(filename)
+        self._df_unitTrustInfo = pd.read_csv(filename, parse_dates=["Launch Date"],  date_format="%d %b %Y")
+        # print("UnitTrustInfoList:",self._df_unitTrustInfo["Launch Date"])
         self._index = 0 
 
     def __iter__(self):
@@ -210,8 +216,10 @@ class UnitTrustInfoList():
     
     def __next__(self):
         if self._index >= len(self._df_unitTrustInfo):
+            self._index = 0
             raise StopIteration  # Signal the end of iteration
         row = self._df_unitTrustInfo.iloc[self._index]
+
         unit_trust = UnitTrustInfo(
             ISIN = row["ISIN"], 
             name=row["Name"], 
@@ -220,7 +228,7 @@ class UnitTrustInfoList():
             dividend_type=row["Dividend Type"], 
             dividend_period=row["Dividend Period"], 
             ticker=row["Ticker"], 
-            launch_date=row["Launch Date"],
+            launch_date=pd.to_datetime(row["Launch Date"]).date(),
             credit_rating=row["Credit Rating"],
             total_net_asset=row["Total Net Assets"],
             desc = row["Desc"],
@@ -233,6 +241,7 @@ class UnitTrustInfoList():
     def get_unittrust_by_isin(self, ISIN: str):
         
         row = self._df_unitTrustInfo[self._df_unitTrustInfo["ISIN"]==ISIN]
+
         unit_trust = UnitTrustInfo(
             ISIN = ISIN, 
             name=row["Name"].values[0], 
@@ -241,7 +250,7 @@ class UnitTrustInfoList():
             dividend_type=row["Dividend Type"].values[0], 
             dividend_period=row["Dividend Period"].values[0], 
             ticker=row["Ticker"].values[0], 
-            launch_date=row["Launch Date"].values[0],
+            launch_date=pd.to_datetime(row["Launch Date"].values[0]).date(),
             credit_rating=row["Credit Rating"].values[0],
             total_net_asset=row["Total Net Assets"].values[0],
             desc = row["Desc"].values[0],
