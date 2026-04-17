@@ -259,6 +259,27 @@ class UnitTrustInfoList():
         )
         return unit_trust
     
+    def get_unittrust_by_ticker(self, ticker: str):
+        
+        row = self._df_unitTrustInfo[self._df_unitTrustInfo["Ticker"]==ticker]
+        
+        unit_trust = UnitTrustInfo(
+            ISIN = row["ISIN"].values[0], 
+            name=row["Name"].values[0], 
+            fund_type=row["Fund Type"].values[0], 
+            currency=row["Currency"].values[0], 
+            dividend_type=row["Dividend Type"].values[0], 
+            dividend_period=row["Dividend Period"].values[0], 
+            ticker=ticker, 
+            launch_date=pd.to_datetime(row["Launch Date"].values[0]).date(),
+            credit_rating=row["Credit Rating"].values[0],
+            total_net_asset=row["Total Net Assets"].values[0],
+            desc = row["Desc"].values[0],
+            ret = row["return"].values[0],
+            risk = row["risk"].values[0]
+        )
+        return unit_trust
+    
     def set_unittrust_by_isin(self, unit_trust_info: UnitTrustInfo):
         self._df_unitTrustInfo.loc[self._df_unitTrustInfo["ISIN"]==unit_trust_info.ISIN,"Name"] = unit_trust_info.name
         self._df_unitTrustInfo.loc[self._df_unitTrustInfo["ISIN"]==unit_trust_info.ISIN,"Fund Type"] = unit_trust_info.fund_type
@@ -285,21 +306,23 @@ class UnitTrustInfoList():
 
 if __name__ == "__main__":
 
-    unittrust_info_list = UnitTrustInfoList("./data/unitTrust Lookup.csv")
-    # unit_trust = unittrust_info_list.get_unittrust_by_isin("SG9999010490")
-    for unit_trust in unittrust_info_list:
-        print(f"Name: {unit_trust.name}")
-        print(f"ISIN: {unit_trust.ISIN}")
-        print(f"Fund Type: {unit_trust.fund_type}")
-        print(f"Currency: {unit_trust.currency}")
-        print(f"Dividend Type: {unit_trust.dividend_type}")
-        print(f"Dividend Period: {unit_trust.dividend_period}")
-        print(f"Ticker: {unit_trust.ticker}")
-        print(f"Launch Date: {unit_trust.launch_date}")
-        print(f"Credit Rating: {unit_trust.credit_rating}")
-        print(f"Total Net Assets: {unit_trust.total_net_asset}")
-        print(f"Desc: {unit_trust.desc}")
-        print(f"Return: {unit_trust.ret}")
-        print(f"Risk: {unit_trust.risk}")
+    print(pd.__version__)
+
+    # unittrust_info_list = UnitTrustInfoList("./data/unitTrust Lookup.csv")
+    # # unit_trust = unittrust_info_list.get_unittrust_by_isin("SG9999010490")
+    # for unit_trust in unittrust_info_list:
+    #     print(f"Name: {unit_trust.name}")
+    #     print(f"ISIN: {unit_trust.ISIN}")
+    #     print(f"Fund Type: {unit_trust.fund_type}")
+    #     print(f"Currency: {unit_trust.currency}")
+    #     print(f"Dividend Type: {unit_trust.dividend_type}")
+    #     print(f"Dividend Period: {unit_trust.dividend_period}")
+    #     print(f"Ticker: {unit_trust.ticker}")
+    #     print(f"Launch Date: {unit_trust.launch_date}")
+    #     print(f"Credit Rating: {unit_trust.credit_rating}")
+    #     print(f"Total Net Assets: {unit_trust.total_net_asset}")
+    #     print(f"Desc: {unit_trust.desc}")
+    #     print(f"Return: {unit_trust.ret}")
+    #     print(f"Risk: {unit_trust.risk}")
     # unit_trust.risk = "****"
     # unittrust_info_list.set_unittrust_by_isin(unit_trust)

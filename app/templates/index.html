@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+
+{% block title %}Unit Trust Information{% endblock %}
+
+{% block body %}
+<div class="page-header">
+    <h1>Unit Trust Information</h1>
+</div>
+<h5>Here is your unit trusts:</h5>
+<div class="container">
+  <div class="list-group">
+    <label class="list-group-item"> 
+      <div class="container">
+        <div class="row">
+          <div style="width: 250px">
+            <div class="fw-normal">               
+              Name
+            </div>
+          </div>
+          <div class="col">
+            <div class="fw-normal">               
+              ISIN
+            </div>
+          </div>
+          <div class="col">
+            <div class="fw-normal">               
+              Fund Type
+            </div>
+          </div>
+          <div class="col">
+            <div class="fw-normal">               
+              Currency
+            </div>
+          </div>
+          <div class="col">
+            <div class="fw-normal">               
+              Dividend Type
+            </div>
+          </div>
+          <div class="col">
+            <div class="fw-normal">               
+              Dividend Period
+            </div>
+          </div>
+          <div class="col">
+            <div class="fw-normal">               
+              Ticker
+            </div>
+          </div>
+          <div style="width: 100px">
+            <div class="d-grid gap-1" style="width: 100px" >
+                     
+            </div>
+          </div>    
+        </div>               
+      </div> 
+    </label>
+    {% for unittrust in unittrustlist %}
+    <label class="list-group-item"> 
+      <div class="container">
+        <div class="row">
+          <div style="width: 250px">
+            <div class="fw-normal">  
+              {{ unittrust.name }}
+            </div>
+          </div>
+          <div class="col">
+            <div class="fw-normal">               
+              {{ unittrust.ISIN }}
+            </div>
+          </div>
+          <div class="col">
+            <div class="fw-normal">               
+              {{ unittrust.fund_type }}
+            </div>
+          </div>
+          <div class="col">
+            <div class="fw-normal">               
+              {{ unittrust.currency }}
+            </div>
+          </div>
+          <div class="col">
+            <div class="fw-normal">               
+              {{ unittrust.dividend_type }}
+            </div>
+          </div>
+          <div class="col">
+            <div class="fw-normal">               
+              {{ unittrust.dividend_period }}
+            </div>
+          </div>
+          <div class="col">
+            <div class="fw-normal">               
+              {{ unittrust.ticker }}
+            </div>
+          </div>
+          <div style="width: 100px">
+            <div class="d-grid gap-1" style="width: 100px" >
+              <a type="button" class="btn btn-outline-primary" href="{{ url_for('edit', ISIN=unittrust.ISIN) }}"> Edit </a>           
+            </div>
+          </div>    
+        </div>               
+      </div> 
+    </label>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

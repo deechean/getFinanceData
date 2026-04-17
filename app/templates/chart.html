@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+
+{% block title %}Unit Trust Information Edit{% endblock %}
+
+{% block body %}
+<div class="row">
+  <div class="col border" style="background-color: darkolivegreen;">
+  </div>
+  <div class="col-8 border" >
+    <div class="page-header">
+        <h5 class="text-center font-weight-bold">Close Price of UnitTrust:</h5>
+        <h5 class="text-center">Name: {{unittrust.name}}</h5>
+        <h5 class="text-center">ISIN: {{unittrust.ISIN}}</h5>
+
+    </div>
+    <div class="container">
+        <div id='price-graph' class='price-graph'></div> 
+    </div>
+    <div class="page-footer"> 
+        <a href="{{ url_for('home') }}" class="btn btn-primary mb-3">Home</a>
+    </div>  
+  </div>
+  <div class="col border" style="background-color: darkolivegreen;">
+  </div>
+</div>
+<script src='https://cdn.plot.ly/plotly-latest.min.js'></script>
+<script type='text/javascript'>
+    var price_graphs = {{price_graph|safe}};
+    Plotly.plot("price-graph", price_graphs, {});
+</script> 
+{% endblock %}

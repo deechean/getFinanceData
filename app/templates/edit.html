@@ -1,0 +1,180 @@
+{% extends "base.html" %}
+
+{% block title %}Unit Trust Information Edit{% endblock %}
+
+{% block body %}
+<div class="row">
+<div class="col border" style="background-color: darkolivegreen;">
+    
+</div>
+<div class="col-8 border" >
+    <div class="page-header">
+        <h1>Edit the information of Unit Trust: </h1>
+        <h5> {{ unittrust.name }} </h5> 
+    </div>
+
+    <div class="container">    
+        <form class="row g-3" action="{{ url_for('edit', ISIN=unittrust.ISIN) }}"  method="POST">
+            <div class="mb-3">
+            <label for="name" class="col-sm-2 col-form-label">Name</label>
+            <div class="col-sm-10">
+                <input class="form-control" type="text" value="{{ unittrust.name }}" name="name" id="name" aria-label="input unit trust name">
+            </div>
+            </div>
+
+            <div class="mb-3">
+            <label for="isin" class="col-sm-2 col-form-label">ISIN</label>
+            <div class="col-sm-10">
+                <input class="form-control" type="text" value="{{ unittrust.ISIN }}" name="isin" id="isin" aria-label="input unit trust ISIN" disabled>
+            </div>
+            </div>
+
+            <div class="mb-3">
+            <label for="fund_type" class="col-sm-2 col-form-label">Fund Type</label>
+            <div class="col-sm-10">
+                <select class="form-select" name="fund_type" id="fund_type" aria-label="select fund type">
+                {% if unittrust.fund_type=='Bonds' %} 
+                    <option value="Bonds" Selected>Bonds</option>
+                    <option value="Equities">Equities</option> 
+                {% else  %} 
+                    <option value="Bonds">Bonds</option>
+                    <option value="Equities" Selected>Equities</option>
+                {% endif %}
+                </select>
+            </div>
+            </div>
+
+            <div class="mb-3">
+            <label for="currency" class="col-sm-2 col-form-label">Currency</label>
+            <div class="col-sm-10">
+                <select class="form-select" name="currency" id="currency" aria-label="select currency">
+                {% if unittrust.currency=='USD' %} 
+                    <option value="USD" Selected>USD</option> 
+                    <option value="SGD">SGD</option> 
+                    <option value="JPY">JPY</option> 
+                {% elif unittrust.currency=='SGD' %} 
+                    <option value="USD">USD</option> 
+                    <option value="SGD" Selected>SGD</option>
+                    <option value="JPY">JPY</option> 
+                {% else %} 
+                    <option value="USD">USD</option> 
+                    <option value="SGD">SGD</option> 
+                    <option value="JPY" Selected>JPY</option>
+                {% endif %}
+                </select>
+            </div>
+            </div>
+
+            <div class="mb-3">
+            <label for="dividend_type" class="col-sm-2 col-form-label">Dividend Type</label>
+            <div class="col-sm-10">
+                <select class="form-select" name="dividend_type" id="dividend_type" aria-label="select dividend type">
+                {% if unittrust.dividend_type=='Unit' %} 
+                    <option value="Unit" Selected>Unit</option> 
+                    <option value="Cash">Cash</option>
+                    <option value="Acc">Acc</option> 
+                {% elif unittrust.dividend_period=='Cash' %} 
+                    <option value="Unit">Unit</option> 
+                    <option value="Cash" Selected>Cash</option>
+                    <option value="Acc">Acc</option>
+                {% else %}
+                    <option value="Unit">Unit</option> 
+                    <option value="Cash">Cash</option>
+                    <option value="Acc" Selected>Acc</option>                     
+                {% endif %}
+                </select>
+            </div>
+            </div>
+
+            <div class="mb-3">
+            <label for="dividend_period" class="col-sm-2 col-form-label">Dividend Period</label>
+            <div class="col-sm-10">
+                <select class="form-select" name="dividend_period" id="dividend_period" aria-label="select dividend cycle">
+                {% if unittrust.dividend_period=='Monthly' %} 
+                    <option value="Monthly" Selected>Monthly</option> 
+                    <option value="Quaterly">Quaterly</option> 
+                    <option value="Yearly">Yearly</option> 
+                    <option value="NA">NA</option>
+                {% elif unittrust.dividend_period=='Quaterly' %}                    
+                    <option value="Monthly">Monthly</option>
+                    <option value="Quaterly" Selected>Quaterly</option>
+                    <option value="Yearly">Yearly</option> 
+                    <option value="NA">NA</option>
+                {% elif unittrust.dividend_period=='Yearly' %} 
+                    <option value="Monthly">Monthly</option> 
+                    <option value="Quaterly">Quaterly</option> 
+                    <option value="Yearly" Selected>Yearly</option> 
+                    <option value="NA">NA</option>
+                {% else %} 
+                    <option value="Monthly">Monthly</option> 
+                    <option value="Quaterly">Quaterly</option> 
+                    <option value="Yearly">Yearly</option> 
+                    <option value="NA" Selected>NA</option>
+                {% endif %}
+                </select>
+            </div>
+            </div>
+
+            <div class="mb-3">
+            <label for="ticker" class="col-sm-2 col-form-label">Ticker</label>
+            <div class="col-sm-10">
+                <input class="form-control" type="text" value="{{ unittrust.ticker }}" name="ticker" id="ticker" aria-label="input unit trust ticker">
+            </div>
+            </div>
+            
+            <div class="mb-3">
+            <label for="launch_date" class="col-sm-2 col-form-label">Launch Date</label>
+            <div class="col-sm-10 form-group">
+                <div class='input-group date'>
+                    <input class="form-control"  type=date value="{{ unittrust.launch_date.strftime('%Y-%m-%d') }}" name="launch_date" id="launch_date" aria-label="input launch date">
+                </div>
+            </div>
+            </div>
+
+            <div class="mb-3">
+            <label for="total_net_asset" class="col-sm-2 col-form-label">Total Net Asset</label>
+            <div class="col-sm-10">
+                <input class="form-control" type="text" value="{{ unittrust.total_net_asset }}" name="total_net_asset" id="total_net_asset" aria-label="input unit trust total net asset">
+            </div>
+            </div>
+
+            <div class="mb-3">
+            <label for="desc" class="col-sm-2 col-form-label">Description</label>
+            <div class="col-sm-10">
+                <textarea  class="form-control" rows="5" name="desc" id="desc" aria-label="input unit trust description">
+                    {{ unittrust.desc }}
+                </textarea>
+            </div>
+            </div>
+
+            <div class="mb-3">
+            <label for="ret" class="col-sm-2 col-form-label">Return Rating (1 - 5 stars)</label>
+            <div class="col-sm-10 form-group">
+                <div class='input-group date'>
+                    <input class="form-control" type="text" value="{{ unittrust.ret }}" name="ret" id="ret" aria-label="input unit trust return rate stars">
+                </div>
+            </div>
+            </div>
+
+            <div class="mb-3">
+            <label for="risk" class="col-sm-2 col-form-label">Risk Rating (1 - 5 stars)</label>
+            <div class="col-sm-10 form-group">
+                <div class='input-group date'>
+                    <input class="form-control" type="text" value="{{ unittrust.risj }}" name="risk" id="risk" aria-label="input unit trust risk rate stars">
+                </div>
+            </div>
+            </div>
+
+
+            <div class="mb-3">
+                <button type="submit" class="btn btn-primary mb-3">Save</button>
+                <a href="{{ url_for('home') }}" class="btn btn-primary mb-3">Cancel</a>
+            </div>  
+        </form>
+    </div>
+</div>
+<div class="col border" style="background-color: darkolivegreen;">
+    
+</div>
+</div>
+{% endblock %}

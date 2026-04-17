@@ -1,18 +1,27 @@
-from tkinter.font import names
 import pandas as pd
+from datetime import datetime, timedelta
+from flask import Flask, request, render_template, redirect, url_for, g
+import json
 
-from flask import Flask, request, render_template, redirect, url_for
-from flask_wtf import FlaskForm
-from wtforms import StringField, PasswordField, TextAreaField, RadioField, SelectField
-from wtforms.validators import InputRequired
+# import plotly
+# import plotly.express as px
 
-from unittrustinfo import UnitTrustInfo, UnitTrustInfoList
+from unittrustinfo import UnitTrustInfoList
+# from historydata import UnitTrustData
+
+# import dash_chart
+# from werkzeug.middleware.dispatcher import DispatcherMiddleware
 
 app = Flask(__name__)
+
 app.config["SECRET_KEY"] = "Thisisasecret!"
 
 global unittrust_info_list
 unittrust_info_list = UnitTrustInfoList("./data/unitTrust Lookup.csv")   
+
+# global unittrust_data
+# unittrust_data = UnitTrustData("./data/unit_trust_history_data-20251114.csv") 
+
 
 @app.route("/", methods=["GET"])
 def home():
@@ -29,6 +38,8 @@ def edit(ISIN):
 
     global unittrust_info_list
     unittrust = unittrust_info_list.get_unittrust_by_isin(ISIN)
+
+    global unittrust_info
     
     if request.method == "GET": # Open the edit form  
         return render_template("edit.html", unittrust=unittrust)
@@ -78,12 +89,6 @@ def edit(ISIN):
         UnitTrustInfoList.set_unittrust_by_isin(unittrust)
         return redirect(url_for("home")) 
 
-@app.route("/view/<ISIN>", methods=["GET"])
-def view(ISIN):
-    global unittrust_info_list
-    unittrust = unittrust_info_list.get_unittrust_by_isin(ISIN)
-    if request.method == "GET": # Open the view chart  
-        return f"Viewing unit trust with ISIN: {ISIN}"
 
 if __name__ == "__main__":
     app.run(debug=True)
