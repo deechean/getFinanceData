@@ -1,8 +1,17 @@
 
 import sys
-sys.path.append("c:\\MyCode\\getFinanceData\\")
+import os
+from pathlib import Path
+
+# 获取项目根目录的绝对路径（当前文件的父目录的父目录）
+project_root = str(Path(__file__).parent.parent.absolute())
+sys.path.append(project_root)
+
 import warnings
 warnings.simplefilter(action='ignore', category=FutureWarning)
+
+import plotly.io as pio
+pio.templates.default = "plotly_dark"
 
 from datetime import date, datetime, timedelta
 from dateutil.relativedelta import relativedelta
@@ -11,27 +20,25 @@ from dash import Dash, State, html, dcc, callback, Output, Input, ctx
 import dash_bootstrap_components as dbc
 import urllib.parse
 
-from unittrustinfo import UnitTrustInfoList
-from historydata import UnitTrustData, UnitTrust
+from utils.unittrustinfo import UnitTrustInfoList
+from utils.historydata import UnitTrustData, UnitTrust
 
-from dash_layout import gen_layout, gen_title, gen_close_price_graph, gen_RSI_graph, gen_WRSI_graph, gen_MACD_graph
+from dash_layout import gen_layout, gen_title, gen_info, gen_close_price_graph, gen_RSI_graph, gen_WRSI_graph, gen_MACD_graph
 
 unittrust_info_file = "./data/unitTrust Lookup.csv"
-history_data_file = "./data/unit_trust_history_data-20260417.csv"
+history_data_file = "./data/unit_trust_history_data-20260503.csv"
 unittrust_info_list = UnitTrustInfoList("./data/unitTrust Lookup.csv")
 unittrust_data = UnitTrustData(history_data_file)  
 
-
-# print(f"unittrust_data length: {len(unittrust_data)}")
-
-app = Dash(external_stylesheets=[dbc.themes.BOOTSTRAP])
+app = Dash(external_stylesheets=[dbc.themes.CYBORG])
 app.title = "Charts of Unit Trusts"
 
 app.layout = html.Div(
   [
     html.Div(
       id="unit-trust-container",
-      children = gen_layout(unittrust_info_list, None, None, None)
+      children = gen_layout(unittrust_info_list, None, None),
+      style={"paddingLeft": "40px", "paddingRight": "40px"}
     ),
 
     # dcc.Location(id="url", refresh=True),
@@ -91,7 +98,7 @@ def get_unittrust_info(ticker):
   Input("ticker-input","value")
 )
 def get_ticker(ticker):
-  print(f">>>>ticker: {ticker}<<<<<")
+  # print(f">>>>ticker: {ticker}<<<<<")
   return ticker
 
 # @app.callback(
@@ -107,6 +114,7 @@ def get_ticker(ticker):
 # Update title block
 @app.callback(
   Output("title-block", "children"),
+  Output("info-block", "children"),
   Input("ticker-value", "data"),
   Input("price-type-input","value"),
 )
@@ -116,7 +124,8 @@ def update_title(ticker, price_type):
   unittrust_info = get_unittrust_info(ticker)
 
   title_layout = gen_title(unittrust, unittrust_info, price_type)
-  return title_layout
+  info_layout = gen_info(unittrust_info)
+  return title_layout, info_layout
 
 # Update date range
 @app.callback(
@@ -184,7 +193,7 @@ def update_price_charts(price_type, start_date, end_date, ticker):
   Input("indicator-input", "value"),
 )
 def update_indicator_block_visibility(indicator):
-  print(indicator)
+  # print(indicator)
   if "RSI" in indicator:
     rsi_style = {"display":"block"}
   else:

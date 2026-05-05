@@ -6,7 +6,7 @@ def RSI(df, window=7, window_2=14):
   # Get the ticker from the rawdata downloaded from yahoo
   ticker = df.columns.get_level_values(level=1).unique()[0]
 
-  delta = df[("Close", ticker)].diff()
+  delta = df[("Adj Close", ticker)].diff()
   
   gain = delta.where(delta > 0, 0.0)
   loss = -delta.where(delta < 0, 0.0)
@@ -32,7 +32,7 @@ def weighted_rsi(df, window=7, decay_factor=0.94):
   weights = np.array([decay_factor ** i for i in range(window-1,-1,-1)])
   weights = weights / weights.sum()
 
-  delta = df[("Close", ticker)].diff()
+  delta = df[("Adj Close", ticker)].diff()
 
   gain = delta.where(delta > 0, 0.0)
   loss = -delta.where(delta < 0, 0.0)
@@ -78,8 +78,8 @@ def MACD(df, short_period=12, long_period=26, signal_period=9):
   ticker = df.columns.get_level_values(level=1).unique()[0]
 
   # 计算 EMA
-  df[("EMA_short", ticker)] = df[("Close", ticker)].ewm(span=short_period, adjust=False).mean()
-  df[("EMA_long", ticker)] = df[("Close", ticker)].ewm(span=long_period, adjust=False).mean()
+  df[("EMA_short", ticker)] = df[("Adj Close", ticker)].ewm(span=short_period, adjust=False).mean()
+  df[("EMA_long", ticker)] = df[("Adj Close", ticker)].ewm(span=long_period, adjust=False).mean()
 
   # DIF = 短期EMA - 长期EMA
   df[("DIF", ticker)] = df[("EMA_short", ticker)] - df[("EMA_long", ticker)]

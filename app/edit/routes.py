@@ -1,45 +1,15 @@
-import pandas as pd
-from datetime import datetime, timedelta
-from flask import Flask, request, render_template, redirect, url_for, g
-import json
+import os
+from datetime import date
+from flask import request, render_template, flash, redirect, url_for, current_app
+from utils.unittrustinfo import UnitTrustInfoList
 
-# import plotly
-# import plotly.express as px
+from . import edit_bp
+from .. import unittrust_info_list
 
-from unittrustinfo import UnitTrustInfoList
-# from historydata import UnitTrustData
-
-# import dash_chart
-# from werkzeug.middleware.dispatcher import DispatcherMiddleware
-
-app = Flask(__name__)
-
-app.config["SECRET_KEY"] = "Thisisasecret!"
-
-global unittrust_info_list
-unittrust_info_list = UnitTrustInfoList("./data/unitTrust Lookup.csv")   
-
-# global unittrust_data
-# unittrust_data = UnitTrustData("./data/unit_trust_history_data-20251114.csv") 
-
-
-@app.route("/", methods=["GET"])
-def home():
-    global unittrust_info_list
-
-    unit_trust_list = []
-    for unittrust in unittrust_info_list:
-        unit_trust_list.append(unittrust)
-    print(unittrust_info_list)
-    return render_template("index.html", unittrustlist = unit_trust_list)
-
-@app.route("/edit/<ISIN>", methods=["GET", "POST"])
+@edit_bp.route("/edit/<ISIN>", methods=["GET", "POST"])
 def edit(ISIN):
-
-    global unittrust_info_list
+    
     unittrust = unittrust_info_list.get_unittrust_by_isin(ISIN)
-
-    global unittrust_info
     
     if request.method == "GET": # Open the edit form  
         return render_template("edit.html", unittrust=unittrust)
@@ -87,8 +57,4 @@ def edit(ISIN):
             unittrust.risk = request.form['risk']
 
         UnitTrustInfoList.set_unittrust_by_isin(unittrust)
-        return redirect(url_for("home")) 
-
-
-if __name__ == "__main__":
-    app.run(debug=True)
+        return redirect(url_for("home_bp.home")) 

@@ -9,173 +9,41 @@ import plotly.express as px
 from  datetime import datetime
 import numpy as np
 
-from unittrustinfo import UnitTrustInfoList
-from historydata import UnitTrustData, UnitTrust
+from utils.unittrustinfo import UnitTrustInfoList
+from utils.historydata import UnitTrustData, UnitTrust
 
 from utils.analysis_utils import RSI, weighted_rsi, MACD
 
-def gen_layout(unittrust_info_list, unittrust, unittrust_info, indicator, price_type="Close"):
+def gen_layout(unittrust_info_list, unittrust, unittrust_info):
   unittrust_list = [{'label': item.name, 'value': item.ticker} for item in unittrust_info_list]
   layout = dbc.Row(
     [
-      # dbc.Col(width=1, style={"background-color":"darkolivegreen"}),
       dbc.Col(
         [         
         html.Div(
           children = [
           "Select a unittrust:",
-          dcc.Dropdown(
+          dbc.RadioItems(
             options=unittrust_list, id="ticker-input",
             value=unittrust_list[0]['value']),
           ]
-          
         ),
-        html.Div(
-         [gen_title(unittrust, unittrust_info, price_type),],
-         id="title-block"
-        ),
+        ],
+        width=4
+      ),  
+      dbc.Col(
+        [      
+        gen_title(unittrust, unittrust_info),
         html.Div(
           style={"border-width": "1px", "border-style": "solid", "border-color": "grey", "padding": "5px"},
           children=[
-            html.Div(
-              gen_filter(),
-              id="filter-block"
-            ),
-            dbc.RadioItems(
-              options=[
-                  {"label": "Close", "value": "Close"},
-                  {"label": "Adj Close", "value": "Adj Close"},
-              ],
-              value=price_type,
-              id="price-type-input",
-              inline=True,
-            ),
-            dcc.Graph(
-              id = "price-graph",
-              # figure = gen_close_price_graph(unittrust, price_type)
-            ),
-            html.Div(
-              children=[
-                "End of Chart"
-              ]
-            ),
-            html.Div(
-              children = [
-              dbc.Row(
-                [
-                  dbc.Label("RSI Window:",width=2),
-                  dbc.Col([
-                  dbc.Input(
-                      value=7,
-                      id="rsi-window-input",
-                      type="number",
-                      min=1, max=31, step=1
-                  )],
-                  width=1
-                  ),
-                  dbc.Col([
-                  dbc.Checkbox(
-                      id="second-rsi-line",
-                      label="Add second RSI line",
-                      value=False,
-                  )],
-                  width=3
-                  ),
-                  dbc.Label("2nd RSI Window:",width=2),
-                  dbc.Col([
-                  dbc.Input(
-                      value=14,
-                      id="rsi-window-input-2",
-                      type="number",
-                      min=1, max=31, step=1, 
-                      disabled=True
-                  )],
-                  width=1
-                  )
-                ]),
-              html.Small("RSI window a number between 1 to 30. A typical value is 7 or 14."),
-              dcc.Graph(
-                id="rsi-graph",
-                figure={'data': [], 'layout': {}}
-              ),
-              ],
-              id="rsi-block"
-            ),
-
-            html.Div(
-              children = [
-                dbc.Row(
-                [
-                  
-                  dbc.Label("WRSI Window:",width=2),
-                  dbc.Col([
-                  dbc.Input(
-                      value=7,
-                      id="wrsi-window-input",
-                      type="number",
-                      min=1, max=31, step=1
-                  )],
-                  width=1
-                  ),
-                  dbc.Label("WRSI decay factor:",width=2),
-                  dbc.Col([
-                  dbc.Input(
-                      value=0.94,
-                      id="wrsi-decay-input",
-                      type="number",
-                      min=0.5, max=0.99, step=0.01
-                  )],
-                  width=1
-                  ),
-                ]),
-                dcc.Graph(
-                  id="wrsi-graph",
-                  figure={'data': [], 'layout': {}}
-                ),
-              ],
-              id="wrsi-block"
-            ),
-            html.Div(
-              children = [
-                dbc.Row([
-                  dbc.Label("Fast MA Period:",width=2),
-                  dbc.Col([
-                    dbc.Input(
-                      value=12,
-                      id="macd-fast-ma-period-input",
-                      type="number",
-                      min=1, max=31, step=1
-                    )
-                  ],
-                  width=1
-                  ),
-                  dbc.Label("Slow MA Period:",width=2),
-                  dbc.Col([
-                    dbc.Input(
-                      value=26,
-                      id="macd-slow-ma-period-input",
-                      type="number",
-                      min=1, max=31, step=1
-                    )
-                  ],
-                  width=1
-                  ),
-                  dbc.Label("Signal Period:",width=2),
-                  dbc.Col([
-                    dbc.Input(
-                      value=9,
-                      id="macd-signal-period-input",
-                      type="number",
-                      min=1, max=31, step=1
-                    )
-                  ],
-                  width=1
-                  ),
-                 ]),
-                dcc.Graph(id="macd-graph")
-              ],            
-              id="macd-block"
-            ),
+            gen_price_div(),                       
+            
+            gen_rsi_div(),
+            
+            gen_wrsi_div(),
+            
+            gen_macd_div(),
           ]
         ),
         html.Div(
@@ -184,15 +52,15 @@ def gen_layout(unittrust_info_list, unittrust, unittrust_info, indicator, price_
           id="info-block"
         )
         ],
-        className="px-5"
+        width=8
       ),
-      # dbc.Col(width=1, style={"background-color":"darkolivegreen"}),
-    ]
+    ],
+    style={"paddingTop": "20px", "paddingBottom": "20px"}
   )
   return layout
 
 
-def gen_title(unittrust, unittrust_info, price_type):
+def gen_title(unittrust, unittrust_info, price_type="Close"):
   # Input Parameters:
   # unittrust: UnitTrust Class
   # unittrust_info: 
@@ -219,7 +87,8 @@ def gen_title(unittrust, unittrust_info, price_type):
       change = unittrust.adjclose_change
       change_rate = unittrust.adjclose_change_rate
 
-  chart_title = dbc.Row(
+  chart_title = html.Div(
+    dbc.Row(
     [
       html.H5(
         className="text-center font-weight-bold",
@@ -230,31 +99,26 @@ def gen_title(unittrust, unittrust_info, price_type):
       html.Div(
         style={"padding": "1px"},
         children=[
-        html.H2(
-            style={"font-weight": "bold", "display": "inline-block"},
-            children=f"$ {close_price:.2f}"
-        ),
-        html.H5(
-            style={"font-weight": "bold", "display": "inline-block","color": "green" if change >0 else "red"},
-            children=f" {change:.2f}"
-        ),
-        html.H5(
-            style={"font-weight": "bold", "display": "inline-block","color": "green" if change >0 else "red"},
-            children=f" ({change_rate:.2f}%)"
-        ),
+          html.H2(
+              style={"font-weight": "bold", "display": "inline-block"},
+              children=f"$ {close_price:.2f}"
+          ),
+          html.H5(
+              style={"font-weight": "bold", "display": "inline-block","color": "green" if change >0 else "red"},
+              children=f" {change:.2f}"
+          ),
+          html.H5(
+              style={"font-weight": "bold", "display": "inline-block","color": "green" if change >0 else "red"},
+              children=f" ({change_rate:.2f}%)"
+          ),
+          html.Small(
+              style={"display": "inline-block"},
+              children=f"(At Close: {update_date})"
+          ),
         ]
       ),
-      html.Div(
-        style={"padding": "1px"},
-        children=[
-        html.Small(
-            style={"display": "inline-block"},
-            children=f"(At Close: {update_date})"
-        ),
-        
-        ]
-      ),
-    ]
+    ]),
+    id="title-block"
   )
   return chart_title
 
@@ -288,6 +152,15 @@ def gen_filter():
         id="indicator-input",
         inline=True
       ),
+      dbc.RadioItems(
+        options=[
+            {"label": "Close", "value": "Close"},
+            {"label": "Adj Close", "value": "Adj Close"},
+        ],
+        value="Close",
+        id="price-type-input",
+        inline=True,
+      ),
     ],
     size="sm",
     className="gap-2"
@@ -295,25 +168,205 @@ def gen_filter():
   
   return filter
 
-def gen_info(unittrust):
-  if unittrust is not None:
+def gen_price_div():
+  price_div = html.Div(
+    [
+      gen_filter(),
+      dcc.Graph(
+        id = "price-graph",
+        figure={'data': [], 'layout': {}},
+        style={"height": "300px"}
+      )
+    ],
+    id="price-div"
+  )
+  return price_div
+
+def gen_info(unittrust_info):
+  
+  if unittrust_info is not None:
         
     row1 = html.Tr([
-        html.Td("Currency: " + unittrust.unittrust_info.currency), 
-        html.Td("Type: " + unittrust.unittrust_info.fund_type), 
-        html.Td("Dividend Type: " + unittrust.unittrust_info.dividend_type),
+        html.Td("Currency: " + unittrust_info.currency), 
+        html.Td("Type: " + unittrust_info.fund_type), 
+        html.Td("Dividend Type: " + unittrust_info.dividend_type),
     ])
 
     row2 = html.Tr([
-        html.Td("Launch Date: " + unittrust.unittrust_info.launch_date.strftime("%Y-%m")), 
-        html.Td("Total Net Asset: " + unittrust.unittrust_info.total_net_asset), 
-        html.Td("Dividend Period: " + unittrust.unittrust_info.dividend_period),
+        html.Td("Launch Date: " + unittrust_info.launch_date.strftime("%Y-%m")), 
+        html.Td("Total Net Asset: " + unittrust_info.total_net_asset), 
+        html.Td("Dividend Period: " + unittrust_info.dividend_period),
     ])
       
     info_table = dbc.Table([html.Tbody([row1, row2])],bordered=1)
   else:
     info_table = dbc.Row()
   return info_table 
+
+def gen_rsi_div():
+
+  rsi_div = html.Div(
+    children = [
+      dbc.Row(
+        [
+          dbc.Col(
+            dbc.InputGroup(
+              [
+                dbc.InputGroupText("RSI Window:"), 
+                dbc.Input(
+                  value=7,
+                  id="rsi-window-input",
+                  type="number",
+                  min=1, max=31, step=1,
+                )
+              ], 
+              size="sm"
+            ),
+            width=2
+          ),
+          dbc.Col([
+          dbc.Checkbox(
+              id="second-rsi-line",
+              label="Add second RSI line",
+              value=False,
+          )],
+          width=2
+          ),
+          dbc.Col(
+            dbc.InputGroup(
+              [
+                dbc.InputGroupText("2nd RSI Window:"), 
+                dbc.Input(
+                  value=14,
+                  id="rsi-window-input-2",
+                  type="number",
+                  min=1, max=31, step=1, 
+                  disabled=True
+                )
+              ], 
+              size="sm"
+            ),
+            width=2
+          ),
+        ]
+      ),    
+      html.Small("RSI window a number between 1 to 30. A typical value is 7 or 14."),  
+      dcc.Graph(
+        id="rsi-graph",
+        figure={'data': [], 'layout': {}},
+        style={"height": "300px"}
+      ),
+    ],
+    id="rsi-block"
+  )  
+  return rsi_div
+
+def gen_wrsi_div():
+  wrsi_div = html.Div(
+    children = [
+      dbc.Row(
+      [
+        dbc.Col(
+          dbc.InputGroup(
+            [
+              dbc.InputGroupText("WRSI Window:"), 
+              dbc.Input(
+                value=7,
+                id="wrsi-window-input",
+                type="number",
+                min=1, max=31, step=1                
+              )
+            ],
+            size="sm"
+          ),
+          width=2
+        ),
+        dbc.Col(
+          dbc.InputGroup(
+            [
+              dbc.InputGroupText("WRSI decay factor:"),             
+              dbc.Input(
+                value=0.94,
+                id="wrsi-decay-input",
+                type="number",
+                min=0.5, max=0.99, step=0.01   
+              )
+            ],
+            size="sm"
+          ),
+          width=2
+        ),
+      ]),
+      dcc.Graph(
+        id="wrsi-graph",
+        figure={'data': [], 'layout': {}},
+        style={"height": "300px"}
+      ),
+    ],
+    id="wrsi-block"
+  )
+  return wrsi_div
+
+def gen_macd_div():
+  macd_div = html.Div(
+    children = [
+      dbc.Row([
+        dbc.Col(
+          dbc.InputGroup(
+            [
+              dbc.InputGroupText("Fast MA Period:"), 
+              dbc.Input(
+                value=12,
+                id="macd-fast-ma-period-input",
+                type="number",
+                min=1, max=31, step=1,                
+              )
+            ],
+            size="sm"
+          ),
+          width=2
+        ),
+        dbc.Col(
+          dbc.InputGroup(
+            [
+              dbc.InputGroupText("Slow MA Period:"),
+              dbc.Input(
+                value=26,
+                id="macd-slow-ma-period-input",
+                type="number",
+                min=1, max=31, step=1
+              )
+            ],
+            size="sm"
+          ),
+          width=2
+        ),
+        dbc.Col(
+          dbc.InputGroup(
+            [
+              dbc.InputGroupText("Signal Period:"),
+              dbc.Input(
+                value=9,
+                id="macd-signal-period-input",
+                type="number",
+                min=1, max=31, step=1,
+                
+              )
+            ],
+            size="sm"
+          ),
+          width=2
+        ),
+      ]),
+      dcc.Graph(
+        id="macd-graph",
+        figure={'data': [], 'layout': {}},
+        style={"height": "300px"}
+      )
+    ],            
+    id="macd-block"
+  )
+  return macd_div
 
 def gen_close_price_graph(unittrust, price_type, start=None, end=None):
   # Input Parameters:
@@ -343,15 +396,22 @@ def gen_close_price_graph(unittrust, price_type, start=None, end=None):
     
     fig = px.area(df, x=df.index, y=price_type)
 
-    # fig.update_traces(line_width=1)
+    fig.update_layout(
+      margin=dict(l=20, r=20, t=20, b=20)
+    )
+    
+    ymin = df[price_type].min()
+    ymax = df[price_type].max()
+    padding = (ymax - ymin) * 0.05
+    fig.update_yaxes(range=[ymin - padding, ymax + padding])
+
+    fig.update_xaxes(
+        nticks=30
+    )
   else:
     fig = {"data": [], "layout": {}}
 
-  # print("fig:")
-  # print(fig)
-
-  return fig
-  
+  return fig  
 
 def gen_RSI_graph(unittrust, start=None, end=None, rsi_window=7, second_rsi=False, rsi_window_2=14):
 
@@ -377,8 +437,30 @@ def gen_RSI_graph(unittrust, start=None, end=None, rsi_window=7, second_rsi=Fals
     df["OverSold"] = [20 for i in range(len(df))]
     df = pd.melt(df, value_vars=cols+["OverBought", "OverSold"], ignore_index=False)
     
-    fig = px.line(df, x=df.index, y="value", color="Price")
-    fig.update_layout(yaxis_range=[0,100])
+    fig = px.line(df, x=df.index, y="value", color="Price",
+      color_discrete_map={
+        "RSI": "grey",
+        "RSI-2": "blue",
+        "OverBought": "red",
+        "OverSold": "green",
+      }
+    )
+
+    fig.update_layout(
+      margin=dict(l=20, r=20, t=20, b=20),
+      yaxis_range=[0,100],
+      legend=dict(
+        orientation="h",
+        yanchor="bottom",
+        y=1.02,
+        xanchor="right",
+        x=1
+      )
+    )
+
+    fig.update_xaxes(
+        nticks=30
+    )
   else:
     fig = {"data": [], "layout": {}}
 
@@ -404,9 +486,29 @@ def gen_WRSI_graph(unittrust, start=None, end=None, rsi_window=7,decay_factor=0.
 
     df = pd.melt(df, value_vars=["WRSI", "OverBought", "OverSold"], ignore_index=False)
     
-    fig = px.line(df, x=df.index, y="value", color="Price")
+    fig = px.line(df, x=df.index, y="value", color="Price",
+      color_discrete_map={
+        "WRSI": "grey",
+        "OverBought": "red",
+        "OverSold": "green",
+      }
+    )
 
-    fig.update_layout(yaxis_range=[0,100])
+    fig.update_layout(
+      margin=dict(l=20, r=20, t=20, b=20),
+      yaxis_range=[0,100],
+      legend=dict(
+        orientation="h",
+        yanchor="bottom",
+        y=1.02,
+        xanchor="right",
+        x=1
+      )
+    )
+    
+    fig.update_xaxes(
+        nticks=30
+    )
 
   else:
     fig = {"data": [], "layout": {}}
@@ -430,14 +532,15 @@ def gen_MACD_graph(unittrust, start=None, end=None, short_period=12, long_period
     
     fig = px.line(df_line, x=df_line.index, y="value", color="Price", 
       color_discrete_map={
-                  "DIF": "black",
-                  "DEA": "red",
+        "DIF": "SpringGreen",
+        "DEA": "red",
       }
     )
 
-    fig.add_bar(x=df.index, y=df["MACD"], name="MACD")
+    fig.add_bar(x=df.index, y=df["MACD"], name="MACD", marker_color="CornflowerBlue")
 
     fig.update_layout(
+      margin=dict(l=20, r=20, t=20, b=20),
       legend=dict(
         orientation="h",
         yanchor="bottom",
@@ -445,6 +548,10 @@ def gen_MACD_graph(unittrust, start=None, end=None, short_period=12, long_period
         xanchor="right",
         x=1
       )
+    )
+    
+    fig.update_xaxes(
+        nticks=30
     )
   else:
     fig = {"data": [], "layout": {}}
