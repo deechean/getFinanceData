@@ -1,0 +1,375 @@
+{% extends "base.html" %}
+
+{% block title %}Unit Trust Information{% endblock %}
+
+{% block body %}
+<div class="page-header">
+    <h1>Portfolio Management</h1>
+</div>
+<div class="container">
+    <a href="{{ url_for('portfolio_bp.create_portfolio') }}" class="btn btn-primary">Add New Portfolio</a>
+    <button type="button" class="btn btn-secondary">Back</button>
+</div>
+
+<!-- Portfolio Management Table -->
+<div class="container mt-5">
+    <table class="table table-striped table-hover">
+        <thead class="table-dark">
+            <tr>
+                <th>Portfolio Name</th>
+                <th>Currency</th>
+                <th>Symbols</th>
+                <th>Cost Basis</th>
+                <th>Market Value</th>
+                <th>Day Change</th>
+                <th>Unrealized Gain/Loss</th>
+                <th>Realized Gain/Loss</th>
+                <th>Created Date</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            {% if portfolios %}
+                {% for portfolio in portfolios %}
+                <tr data-original-name="{{ portfolio.portfolio_name }}">
+                    <td class="editable-cell">
+                        <span class="editable-label portfolio-name-label">{{ portfolio.portfolio_name }}</span>
+                        <input type="text" class="form-control form-control-sm editable-input d-none" value="{{ portfolio.portfolio_name }}" aria-label="Edit portfolio name">
+                    </td>
+                    <td class="editable-cell">
+                        <span class="editable-label portfolio-currency-label">{{ portfolio.currency }}</span>
+                        <select class="form-select form-select-sm editable-select d-none" aria-label="Edit currency">
+                            <option value="SGD">SGD</option>
+                            <option value="USD">USD</option>
+                            <option value="EUR">EUR</option>
+                            <option value="JPY">JPY</option>
+                            <option value="AUD">AUD</option>
+                            <option value="GBP">GBP</option>
+                            <option value="HKD">HKD</option>
+                        </select>
+                    </td>
+                    <td>{{ portfolio.symbols }}</td>
+                    <td>{{ portfolio.cost_basis }}</td>
+                    <td>{{ portfolio.market_value }}</td>
+                    <td>{{ portfolio.day_change }}</td>
+                    <td>{{ portfolio.unrealized_gain_loss }}</td>
+                    <td>{{ portfolio.realized_gain_loss }}</td>
+                    <td>{{ portfolio.created_date }}</td>
+                    <td class="action-column">
+                        <div>
+                            <button type="button" class="btn btn-sm btn-success save-btn d-none" onclick="savePortfolio(this)">
+                                <i class="bi bi-save"></i>
+                            </button>
+                            <a href="{{ url_for('portfolio_bp.edit_portfolio', portfolio_name=portfolio.portfolio_name) }}" class="btn btn-sm btn-warning">
+                                <i class="bi bi-pencil"></i> 
+                            </a>
+                            <button type="button" class="btn btn-sm btn-danger" onclick="deletePortfolio(this, '{{ portfolio.portfolio_name }}')">
+                                <i class="bi bi-trash-fill"></i>
+                            </button>
+                        </div>
+                        <div class="invalid-feedback edit-error"></div>
+                    </td>
+                </tr>
+                {% endfor %}
+            {% else %}
+                <tr>
+                    <td colspan="10" class="text-center text-muted">No portfolios found. <a href="{{ url_for('portfolio_bp.create_portfolio') }}">Create one now</a></td>
+                </tr>
+            {% endif %}
+        </tbody>
+    </table>
+</div>
+
+<style>
+    .editable-label {
+        cursor: pointer;
+        display: inline-block;
+        width: 100%;
+    }
+    .save-btn {
+        min-width: 72px;
+    }
+    .invalid-feedback {
+        display: block;
+        margin-top: 0.35rem;
+    }
+    .action-column {
+        width: 240px;
+        min-width: 240px;
+    }
+    .action-column > div {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+    }
+</style>
+
+<script>
+function getRowCells(button) {
+    const row = button.closest('tr');
+    return {
+        row,
+        nameCell: row.querySelector('.portfolio-name-label'),
+        nameInput: row.querySelector('.editable-input'),
+        currencyLabel: row.querySelector('.portfolio-currency-label'),
+        currencySelect: row.querySelector('.editable-select'),
+        saveBtn: row.querySelector('.save-btn'),
+        errorBox: row.querySelector('.edit-error')
+    };
+}
+
+let activeEditableRow = null;
+let isSavingPortfolio = false;
+
+function showError(row, message) {
+    const errorBox = row.querySelector('.edit-error');
+    if (errorBox) {
+        errorBox.textContent = message;
+        errorBox.style.display = 'block';
+    }
+}
+
+function clearError(row) {
+    const errorBox = row.querySelector('.edit-error');
+    if (errorBox) {
+        errorBox.textContent = '';
+        errorBox.style.display = 'none';
+    }
+}
+
+function cancelActiveEdit() {
+    if (!activeEditableRow) return;
+    
+    const input = activeEditableRow.querySelector('.editable-input');
+    const select = activeEditableRow.querySelector('.editable-select');
+    const nameLabel = activeEditableRow.querySelector('.portfolio-name-label');
+    const currencyLabel = activeEditableRow.querySelector('.portfolio-currency-label');
+    const saveBtn = activeEditableRow.querySelector('.save-btn');
+    
+    // 隐藏输入框，显示名称标签
+    if (input && !input.classList.contains('d-none')) {
+        input.classList.add('d-none');
+        if (nameLabel) nameLabel.classList.remove('d-none');
+    }
+    
+    // 隐藏下拉框，显示货币标签
+    if (select && !select.classList.contains('d-none')) {
+        select.classList.add('d-none');
+        if (currencyLabel) currencyLabel.classList.remove('d-none');
+    }
+    
+    // 隐藏 Save 按钮
+    if (saveBtn) {
+        saveBtn.classList.add('d-none');
+    }
+    
+    // 清空错误信息
+    clearError(activeEditableRow);
+    
+    // 重置编辑锁
+    activeEditableRow = null;
+}
+
+function canEditRow(row) {
+    return !activeEditableRow || activeEditableRow === row;
+}
+
+function toggleSaveButton(row) {
+    const saveBtn = row.querySelector('.save-btn');
+    if (saveBtn) {
+        saveBtn.classList.remove('d-none');
+    }
+}
+
+function validateDuplicateName(row, nameValue) {
+    const rows = document.querySelectorAll('tbody tr');
+    const normalizedValue = nameValue.trim().toLowerCase();
+    const originalName = row.dataset.originalName ? row.dataset.originalName.trim().toLowerCase() : '';
+
+    if (!normalizedValue) {
+        return 'Portfolio name cannot be blank.';
+    }
+    for (const otherRow of rows) {
+        if (otherRow === row) continue;
+        const otherName = otherRow.querySelector('.portfolio-name-label')?.textContent.trim().toLowerCase();
+        if (otherName === normalizedValue) {
+            return `Portfolio name "${nameValue}" is already used. Please enter a different name.`;
+        }
+    }
+    return null;
+}
+
+function activateNameEdit(cell) {
+    const row = cell.closest('tr');
+    if (!row || !canEditRow(row) || isSavingPortfolio) return;
+    const label = cell.querySelector('.portfolio-name-label');
+    const input = cell.querySelector('.editable-input');
+    if (!label || !input) return;
+    activeEditableRow = row;
+    const initialValue = input.value;
+    label.classList.add('d-none');
+    input.classList.remove('d-none');
+    input.focus();
+    input.setSelectionRange(0, input.value.length);
+    
+    input.addEventListener('blur', function handleBlur() {
+        if (input.value.trim() === initialValue.trim()) {
+            cancelActiveEdit();
+        }
+        input.removeEventListener('blur', handleBlur);
+    });
+}
+
+function activateCurrencyEdit(cell) {
+    const row = cell.closest('tr');
+    if (!row || !canEditRow(row) || isSavingPortfolio) return;
+    const label = cell.querySelector('.portfolio-currency-label');
+    const select = cell.querySelector('.editable-select');
+    if (!label || !select) return;
+    const currentCurrency = label.textContent.trim();
+    if (![...select.options].some(option => option.value === currentCurrency)) {
+        const newOption = document.createElement('option');
+        newOption.value = currentCurrency;
+        newOption.textContent = currentCurrency;
+        select.appendChild(newOption);
+    }
+    activeEditableRow = row;
+    const initialValue = currentCurrency;
+    select.value = currentCurrency;
+    label.classList.add('d-none');
+    select.classList.remove('d-none');
+    select.focus();
+    
+    select.addEventListener('change', function handleChange() {
+        select.removeEventListener('change', handleChange);
+    });
+    
+    select.addEventListener('blur', function handleBlur() {
+        if (select.value === initialValue) {
+            cancelActiveEdit();
+        }
+        select.removeEventListener('blur', handleBlur);
+    });
+}
+
+function savePortfolio(button) {
+    const { row, nameInput, currencySelect, saveBtn } = getRowCells(button);
+    clearError(row);
+
+    const originalName = row.dataset.originalName;
+    const newName = nameInput ? nameInput.value.trim() : row.querySelector('.portfolio-name-label')?.textContent.trim();
+    const newCurrency = currencySelect ? currencySelect.value.trim() : row.querySelector('.portfolio-currency-label')?.textContent.trim();
+
+    const duplicateError = validateDuplicateName(row, newName);
+    if (duplicateError) {
+        showError(row, duplicateError);
+        return;
+    }
+
+    let saveSucceeded = false;
+    isSavingPortfolio = true;
+    if (saveBtn) saveBtn.disabled = true;
+
+    fetch(`/portfolio/update/${encodeURIComponent(originalName)}`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ portfolio_name: newName, currency: newCurrency })
+    })
+    .then(async response => {
+        const data = await response.json();
+        if (!response.ok) {
+            throw new Error(data.message || 'Unable to update portfolio.');
+        }
+        return data;
+    })
+    .then(data => {
+        saveSucceeded = true;
+        if (nameInput) {
+            nameInput.value = data.portfolio_name;
+            row.querySelector('.portfolio-name-label').textContent = data.portfolio_name;
+            nameInput.classList.add('d-none');
+            row.querySelector('.portfolio-name-label').classList.remove('d-none');
+        }
+        if (currencySelect) {
+            currencySelect.value = data.currency;
+            row.querySelector('.portfolio-currency-label').textContent = data.currency;
+            currencySelect.classList.add('d-none');
+            row.querySelector('.portfolio-currency-label').classList.remove('d-none');
+        }
+        row.dataset.originalName = data.portfolio_name;
+        if (saveBtn) saveBtn.classList.add('d-none');
+    })
+    .catch(error => {
+        showError(row, error.message);
+    })
+    .finally(() => {
+        if (saveBtn) saveBtn.disabled = false;
+        isSavingPortfolio = false;
+        if (saveSucceeded) {
+            activeEditableRow = null;
+        }
+    });
+}
+
+const portfolioTable = document.querySelector('table.table');
+if (portfolioTable) {
+    portfolioTable.addEventListener('click', event => {
+        const nameCell = event.target.closest('.portfolio-name-label');
+        const currencyCell = event.target.closest('.portfolio-currency-label');
+        if (nameCell) {
+            activateNameEdit(nameCell.closest('.editable-cell'));
+            toggleSaveButton(nameCell.closest('tr'));
+        }
+        if (currencyCell) {
+            activateCurrencyEdit(currencyCell.closest('.editable-cell'));
+            toggleSaveButton(currencyCell.closest('tr'));
+        }
+    });
+
+    portfolioTable.addEventListener('keydown', event => {
+        const input = event.target.closest('.editable-input');
+        if (input && event.key === 'Enter') {
+            event.preventDefault();
+            const row = input.closest('tr');
+            row.querySelector('.save-btn')?.click();
+        }
+    });
+}
+
+function deletePortfolio(button, portfolioName) {
+    const confirmDelete = prompt(
+        `Are you sure you want to delete "${portfolioName}"?\n\nType "delete" to confirm:`,
+        ""
+    );
+    
+    if (confirmDelete === "delete") {
+        fetch(`/portfolio/delete/${encodeURIComponent(portfolioName)}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const row = button.closest('tr');
+                row.remove();
+                alert(`Portfolio "${portfolioName}" has been deleted successfully.`);
+            } else {
+                alert(`Error: ${data.message}`);
+            }
+        })
+        .catch(error => {
+            alert(`Error deleting portfolio: ${error}`);
+            console.error('Error:', error);
+        });
+    } else if (confirmDelete !== null) {
+        alert('Invalid confirmation. Portfolio was not deleted.');
+    }
+}
+</script>
+
+{% endblock %}

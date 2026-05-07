@@ -287,3 +287,63 @@ class Portfolio:
                 "success": False,
                 "message": f"Error deleting portfolio: {str(e)}"
             }
+    
+    @staticmethod
+    def get_portfolio_details(portfolio_name, data_dir="data"):
+        """
+        Get details for a specific portfolio from portfolio_details.csv
+        """
+        details_path = os.path.join(data_dir, "portfolio_details.csv")
+        details = []
+        try:
+            if not os.path.exists(details_path):
+                return details
+            
+            with open(details_path, 'r', encoding='utf-8') as csvfile:
+                reader = csv.DictReader(csvfile)
+                for row in reader:
+                    if row.get('Portfolio Name', '').strip() == portfolio_name.strip():
+                        details.append(row)
+            return details
+        except Exception as e:
+            print(f"Error reading portfolio details: {str(e)}")
+            return []
+    
+    @staticmethod
+    def add_symbol_to_portfolio(portfolio_name, symbol, data_dir="data"):
+        """
+        Add a symbol to portfolio_details.csv with default values
+        """
+        details_path = os.path.join(data_dir, "portfolio_details.csv")
+        try:
+            # Check if already exists
+            existing = Portfolio.get_portfolio_details(portfolio_name, data_dir)
+            for item in existing:
+                if item.get('Symbol', '').strip() == symbol.strip():
+                    return {"success": False, "message": f"Symbol '{symbol}' already in portfolio."}
+            
+            # Get portfolio currency
+            portfolio = Portfolio.get_portfolio_by_name(portfolio_name, data_dir)
+            if not portfolio:
+                return {"success": False, "message": "Portfolio not found."}
+            currency = portfolio['currency']
+            
+            # Add new row
+            file_exists = os.path.exists(details_path)
+            with open(details_path, 'a', newline='', encoding='utf-8') as csvfile:
+                writer = csv.writer(csvfile)
+                if not file_exists:
+                    writer.writerow([
+                        "Portfolio Name", "Symbol", "Status", "Shares", "Last Price", "AC/Share", 
+                        "Total Cost($)", "Market Value($)", "Tot Div Income($)", "Day Gain UNRL (%)", 
+                        "Day Gain UNRL ($)", "Total Gain UNRL (%)", "Total Gain UNRL ($)", 
+                        "Realized Gain (%)", "Realized Gain ($)", "Currency", "Created Date"
+                    ])
+                created_date = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                writer.writerow([
+                    portfolio_name, symbol, "watch", "0", "0.0", "0.0", "0.0", "0.0", "0.0", 
+                    "0.0", "0.0", "0.0", "0.0", "0.0", "0.0", currency, created_date
+                ])
+            return {"success": True, "message": f"Symbol '{symbol}' added to portfolio."}
+        except Exception as e:
+            return {"success": False, "message": f"Error adding symbol: {str(e)}"}
